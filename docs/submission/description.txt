@@ -1,4 +1,4 @@
-Mandate is a capital-allocation market for autonomous trading agents. An allocator funds an agent without handing over custody: the money sits in a vault contract, the agent holds one permission (execute), and every order must pass an on-chain risk guard before it reaches the venue. The question an allocator has to answer changes from "can I trust this trader?" to "can I accept these terms?".
+Mandate is a capital-allocation market for autonomous trading agents. An allocator funds an agent without handing over custody: the money sits in a vault contract, the agent holds one permission (execute), and every order must pass an on-chain risk guard before it reaches the venue. The allocator's question changes from "can I trust this trader?" to "can I accept these terms?".
 
 THE PROBLEM
 
@@ -23,13 +23,13 @@ A mandate is a set of terms written into a contract and locked before the first 
 - Volatility clause. From its own marks the guard estimates realised volatility and refuses an order that adds exposure (StressBreach) when a k-sigma move would push the vault past its drawdown limit. Reducing orders always pass.
 - Mark age. A vault whose venue price is older than maxMarkAgeSeconds cannot trade or take deposits. If no price arrives for three times that age, anyone can freeze it; anyone can resume it if a price returns within 15 minutes inside every limit. Allocators keep a cash-only exit (withdrawUnpriced).
 - Fees as terms. A management fee (at most 5% a year) and a performance fee (at most 30%, only above the fee high-water mark) are charged by the vault in new shares, on a fresh mark only.
-- Batch allocation and releases. BatchAllocator takes EIP-712 signed intents with escrow, nets an epoch into one deposit per vault and pays shares against Merkle proofs. MandateRegistry anchors each agent's locked terms and accepts signed statistical releases, each stating the epsilon it spends, up to a cap.
+- Batch allocation and releases. BatchAllocator takes EIP-712 signed intents with escrow, nets an epoch into one deposit per vault and pays shares against Merkle proofs. MandateRegistry anchors each agent's locked terms and accepts signed statistical releases, each stating the epsilon it spends, up to a cap. Each release is bound to a noise-seed hash the reporter committed before its data window began.
 
 WHY THIS NEEDS MONAD
 
 The mark-age term has a floor, and the floor is the block interval. A mark is refreshed by a transaction, so when the next block's transactions read it, it is already one block interval old. A mandate that says "do not trust a price older than 4 seconds" can only be kept where blocks arrive inside 4 seconds. On 12-second blocks the mark has expired before the next block exists: a trade or deposit goes through only if it lands in the same block as an oracle update and behind it, and reverts with MarkTooOld in every later block.
 
-The local build simulates this with a switch that holds the oracle to one mark per 12 seconds, the most a 12-second chain can deliver, while the local chain keeps mining. At 1-second cadence, orders on the Tight Mandate vault pass its 4-second term. At 12-second cadence the same order reverts with MarkTooOld for most of each interval.
+The local build simulates this with a switch that holds the oracle to one mark per 12 seconds while the chain keeps mining. At 1-second cadence, Tight Mandate orders pass its 4-second term; at 12-second cadence the same order reverts with MarkTooOld for most of each interval.
 
 The block interval is the floor, not the whole bound: the price feed has to arrive that often too. On Monad testnet our demo oracle is a paid transaction every 5 seconds, so the tightest live mandate asks for a 10-second mark. Eight consecutive poke() calls on that vault all passed the term, each checked against a mark 1 to 5 seconds old (listed in the README). The 4-second term runs on the local build.
 
@@ -37,13 +37,13 @@ WHAT IS LIVE TODAY
 
 - Contracts on Monad testnet (chain 10143): MandateFactory, MandateRiskGuard, four seeded MandateVaults with different mandates, BatchAllocator, MandateRegistry, the venue adapter, a mock venue and a mock USDC. Addresses are in the README.
 - A web app with Market, Agent, Allocate, Batch, Privacy, Launch and Live Risk screens. Every number is a contract read and every button is a transaction. Each vault shows its term sheet: the locked value, where the vault stands and what a breach does. A visitor can use a demo allocator the server signs for, or a browser wallet with a test-USDC faucet.
-- A demo video recorded on the hosted testnet demo: a mandate launched from a wallet, a deposit, an over-limit order refused, a price shock, poke() freezing the vault, the agent refused, unwind steps and a withdrawal.
-- An adapter for Perpl, the perpetuals exchange on Monad, tested against Perpl's deployed exchange on a fork of Monad testnet: open, a guard refusal, a flip, a freeze on holding time, unwind to Closed and a full withdrawal. Deployed to Monad testnet on 2026-10-06 and run once against Perpl's testnet exchange: allocate 150 aUSD, open and close 0.001 BTC, withdraw 149.91 aUSD. Then a rule-based agent script (not AI) traded it in five runs, about five hours of ticking in all: 20 orders filled, and 9 orders past the $200 cap were refused on chain by the guard.
-- 128 contract tests, 69 server tests and Foundry invariant and reentrancy suites, run in CI. Four rounds of internal security review; one found and fixed a bug in registry registration.
+- A demo video recorded on the hosted testnet demo: a mandate launched from a wallet, a deposit, an over-limit order refused, a price shock, poke() freezing the vault, the agent refused, an unwind step and a withdrawal.
+- An adapter for Perpl, the perpetuals exchange on Monad, tested end to end against Perpl's deployed exchange on a fork of Monad testnet. Deployed to Monad testnet on 2026-10-06 and run against Perpl's testnet exchange: one round trip of 0.001 BTC, then a rule-based agent script (not AI) traded it in five runs, about five hours of ticking in all: 20 orders filled, and 9 orders past the $200 cap were refused on chain by the guard.
+- Contract and server tests and Foundry invariant and reentrancy suites, run in CI. Four rounds of internal security review; one found and fixed a bug in registry registration.
 
 WHAT IS NOT BUILT YET
 
-- The live venue is a deterministic mock and the USDC is a mock token. On testnet the price comes from our own keeper. The Perpl vault on testnet has traded only 0.001 BTC for about five hours in all, with an agent script we wrote.
+- The live venue is a deterministic mock and the USDC is a mock token. On testnet the price comes from our own keeper. The Perpl vault has held at most a 0.001 BTC position, traded by an agent script we wrote.
 - Differential privacy covers public data only. The reporter adds Laplace noise to clipped returns from public marks, so it demonstrates the mechanism and the on-chain budget, not protection of anything private. The stated epsilon is exact for the mean only. Batch intents are visible in settlement calldata.
 - The demo's batcher and reporter are our own server, which keeps claim proofs in memory. No external audit has been done.
 - The guard limits behaviour. It does not make a strategy good and it does not prevent losses inside the mandate. Realised loss can exceed the drawdown term by slippage and gaps. Leverage and size are checked per order; between orders only the mark-based terms act.
