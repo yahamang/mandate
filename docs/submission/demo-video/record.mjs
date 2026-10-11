@@ -10,7 +10,7 @@ const BASE = process.env.BASE || "https://mandate-e4kb.onrender.com/";
 const RPC = process.env.RPC || "https://testnet-rpc.monad.xyz";
 // The browser-wallet key pays gas for Launch. It lives outside the repo.
 const KEY_FILE = process.env.KEY_FILE;
-const SCENES = 9;
+const SCENES = 8;
 const LABEL = process.env.LABEL || "Monad testnet";
 const len = (dir, i) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", `${dir}/s${i}.aiff`]).toString());
 const dur = [...Array(SCENES).keys()].map((i) => Math.max(len("audio-ko", i), len("audio-en", i)));
@@ -33,8 +33,6 @@ async function retry(f, n = 4) {
 // Either a list of {private_key} or one {privateKey} object.
 const keyJson = JSON.parse(fs.readFileSync(KEY_FILE, "utf8"));
 const wallet = new Wallet(Array.isArray(keyJson) ? keyJson[0].private_key : keyJson.privateKey, rpc);
-// The factory of the book the page is serving; a reset deploys a new one.
-const FACTORY = (await (await fetch(new URL("api/deployment", BASE))).json()).addresses.factory.toLowerCase();
 const chainHex = "0x" + (await rpc.getNetwork()).chainId.toString(16);
 const sent = [];
 
@@ -52,13 +50,21 @@ const OVERLAY = () => {
   @keyframes __rp{from{transform:scale(.6);opacity:.95}to{transform:scale(4.2);opacity:0}}
   #__act{position:fixed;z-index:2147483647;right:18px;top:74px;padding:7px 12px;border-radius:7px;background:#ffd23f;color:#111;font:600 14px/1.2 ui-monospace,Menlo,monospace;pointer-events:none;opacity:0;transform:translateY(-6px);transition:opacity .3s ease-out,transform .4s cubic-bezier(.22,1,.36,1)}
   #__act.__on{opacity:1;transform:none}
+  #__role{position:fixed;z-index:2147483647;left:18px;top:74px;padding:6px 11px;border-radius:7px;background:rgba(6,9,16,.86);color:#f4f6fb;border:1px solid rgba(255,210,63,.7);font:600 13px/1.2 ui-monospace,Menlo,monospace;pointer-events:none;opacity:0;transition:opacity .3s ease-out}
+  #__role.__on{opacity:1}
   .toast{bottom:auto!important;top:90px}`;
   document.head.appendChild(css);
   const cur = document.createElement("div");
   cur.id = "__cur";
   cur.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22"><path d="M3 2l15 8-6.5 1.8L8.6 18z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>';
   const act = Object.assign(document.createElement("div"), { id: "__act" });
-  document.body.append(cur, act);
+  // Who is acting right now, so a role change is on screen and not only in the narration.
+  const role = Object.assign(document.createElement("div"), { id: "__role" });
+  document.body.append(cur, act, role);
+  window.__setRole = (t) => {
+    role.textContent = t ? "Acting as: " + t : "";
+    role.classList.toggle("__on", Boolean(t));
+  };
   // The badge fades out with its old text, then fades in with the new one.
   let actTimer;
   window.__action = (t) => {
@@ -137,7 +143,13 @@ const now = () => (Date.now() - T0) / 1000;
 const segs = [];
 const log = (...a) => console.log(now().toFixed(1), ...a);
 
-const setup = () => page.evaluate(OVERLAY);
+// The role badge outlives a navigation: setup puts it back.
+let currentRole = "";
+const setup = async () => {
+  await page.evaluate(OVERLAY);
+  await page.evaluate((r) => window.__setRole(r), currentRole);
+};
+const role = (t) => { currentRole = t; return page.evaluate((r) => window.__setRole(r), t); };
 async function click(sel, label, { hold = 700, after = 500 } = {}) {
   const loc = typeof sel === "string" ? page.locator(sel).first() : sel;
   await loc.scrollIntoViewIfNeeded();
@@ -151,7 +163,10 @@ async function click(sel, label, { hold = 700, after = 500 } = {}) {
   await page.evaluate(() => { window.__unpoint(window.__ring); window.__action(""); });
 }
 async function point(sel, label, ms = 2500) {
-  const h = await page.locator(sel).first().elementHandle();
+  const loc = page.locator(sel).first();
+  await loc.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "smooth" }));
+  await sleep(700);
+  const h = await loc.elementHandle();
   await page.evaluate(([el, l]) => { window.__action(l); window.__ring = window.__point(el); }, [h, label]);
   await sleep(ms);
   await page.evaluate(() => { window.__unpoint(window.__ring); window.__action(""); });
@@ -164,21 +179,27 @@ async function smoothScroll(px, steps = 20, ms = 60) {
   for (let i = 0; i < steps; i++) { await page.mouse.wheel(0, px / steps); await sleep(ms); }
 }
 // Orders and poke need a mark younger than Tight Mandate's 10s limit. Send
-// right after the oracle's next mark rather than late in its cycle. The cell
-// refreshes every few seconds in step with the oracle, so a small age may
-// never show; the age read the moment the cell changes is the true one.
+// right after the oracle's next mark rather than late in its cycle. The Live
+// Risk age tile follows the selected vault and re-renders on every refresh,
+// hidden or not, so it is read whatever screen is showing. A small age may
+// never show; the age read the moment the tile changes is the true one. A
+// small age that holds for 1.5 s also counts: a chain that marks every block
+// (the local one) shows the same "0s" on every refresh.
 async function freshMark(maxAge = 3, timeout = 60000) {
   const limit = Math.max(maxAge, 4);
-  await page.evaluate(() => (window.__lastAge = undefined));
+  await page.evaluate(() => { window.__lastAge = undefined; window.__ageSince = Date.now(); });
   const ok = await page.waitForFunction((m) => {
-    const t = document.querySelector('.agent-row[aria-label="Open Tight Mandate"] [data-cell="age"]')?.textContent ?? "";
+    const t = document.querySelector("#tileAge")?.textContent ?? "";
     const changed = window.__lastAge !== undefined && t !== window.__lastAge;
+    if (t !== window.__lastAge) window.__ageSince = Date.now();
+    const steady = Date.now() - window.__ageSince > 1500;
     window.__lastAge = t;
     const age = parseInt(t, 10);
-    return changed && Number.isFinite(age) && age <= m;
+    return (changed || steady) && Number.isFinite(age) && age <= m;
   }, limit, { timeout, polling: 100 }).then(() => true, () => false);
   if (!ok) log("no fresh mark within", timeout / 1000, "s");
 }
+const TIGHT = '.fund-card[aria-label="Open Tight Mandate"]';
 async function scene(i, fn) {
   if (ONLY && !ONLY.includes(i)) return;
   const start = now();
@@ -197,54 +218,36 @@ await sleep(4000);
 await setup();
 await page.mouse.move(640, 360);
 
+// One vault's life, as in ../demo-video-plan.md: market, launch, allocate,
+// agent orders, freeze and unwind, withdraw, mark age and explorer, Perpl.
 await scene(0, async () => {
-  await sleep(1500);
-  await point("#chainLabel", "Monad testnet · 10143", 3000);
-  await smoothScroll(520, 25, 80);
-  await sleep(3500);
-  await smoothScroll(-520, 15, 60);
+  await sleep(1200);
+  await point("#chainLabel", "Monad testnet · 10143", 2600);
+  await point(TIGHT, "Four seeded vaults, four mandates", 3000);
 });
 
 let launched = null;
 await scene(1, async () => {
+  await role("vault operator (browser wallet)");
   await click("#walletButton", "Connect");
   await click("#walletInjected", "Browser wallet");
   await bodyHas("connected from your wallet", 30000);
   await nav("launch", "Launch");
   await click('[data-preset="balanced"]', "Balanced preset");
   await smoothScroll(700, 25, 90);
-  await sleep(800);
+  await sleep(600);
   await click("#launchButton", "createMandate()", { after: 300 });
   const ok = await bodyHas("is live with terms", 90000);
   launched = sent.at(-1);
   log("launch ok", ok, launched);
 });
 
-// The narration walks the "If crossed" column: a refused order, the final
-// freeze, the daily pause, the resumable freeze on a stalled feed.
 await scene(2, async () => {
-  const t0 = now();
-  const until = (t) => sleep(Math.max(0, (t0 + t - now()) * 1000));
-  await nav("market", "Market");
-  await click('.agent-row[aria-label="Open Tight Mandate"]', "Tight Mandate");
-  await page.locator("#termSheet").scrollIntoViewIfNeeded();
-  await sleep(600);
-  for (const [t, sel, label, ms] of [
-    [7.3, "#termSheet .term-row .term-breach", "order refused", 2600],
-    [10.4, '[data-term="drawdown"] .term-breach', "freeze, final", 2700],
-    [13.5, '[data-term="dailyLoss"] .term-breach', "pause until next UTC day", 3000],
-    [16.8, '[data-term="blind"] .term-breach', "freeze, resumable", 4500]
-  ]) {
-    await until(t - 0.8);
-    await page.locator(sel).first().evaluate((el) => el.scrollIntoView({ block: "center", behavior: "smooth" }));
-    await until(t);
-    await point(sel, label, ms);
-  }
-});
-
-await scene(3, async () => {
+  await role("allocator (demo account)");
   await click("#walletButton", "Switch account");
   await click("#walletDemo", "Demo allocator");
+  await nav("market", "Market");
+  await click(TIGHT, "Tight Mandate");
   await nav("allocate", "Allocate");
   await click('[data-amount="1000"]', "1,000 USDC");
   await click("#allocateButton", "Review allocation");
@@ -254,51 +257,54 @@ await scene(3, async () => {
   log("allocate ok", ok);
 });
 
-await scene(4, async () => {
+await scene(3, async () => {
+  await role("agent (demo key)");
   await nav("risk", "Live Risk");
   const before = await count("REVERTED");
   await freshMark();
   await click("#compliantOrder", "Send order inside mandate");
   await page.waitForFunction(() => !document.querySelector("#compliantOrder")?.disabled, null, { timeout: 30000 }).catch(() => {});
-  await sleep(1500);
+  await sleep(1200);
   await freshMark();
   await click("#runViolation", "Send over-limit order");
   await page.waitForFunction((b) => (document.querySelector("#eventFeed")?.innerText.split("REVERTED").length - 1) > b, before, { timeout: 30000 }).catch(() => log("no revert seen"));
-  await sleep(1200);
+  await point("#eventFeed .feed-item", "Refused by the guard", 2200).catch(() => sleep(2200));
 });
 
-await scene(5, async () => {
+await scene(4, async () => {
+  await role("anyone");
   await click('[data-shock="-200"]', "−2% shock");
-  const over = await page.waitForFunction(() => document.querySelector('.agent-row[aria-label="Open Tight Mandate"] [data-cell="dd"]')?.classList.contains("breached"), null, { timeout: 45000, polling: 250 }).then(() => true, () => false);
+  const over = await page.waitForFunction((sel) => document.querySelector(`${sel} [data-cell="state"]`)?.textContent.includes("OVER LIMIT"), TIGHT, { timeout: 45000, polling: 250 }).then(() => true, () => false);
   log("over", over);
-  await sleep(800);
+  await sleep(600);
   await freshMark();
   await click("#pokeButton", "poke()");
   const frozen = await bodyHas("FROZEN", 60000);
   log("frozen", frozen);
-  await sleep(1500);
+  await sleep(1000);
+  await role("agent (demo key)");
   await click("#compliantOrder", "Send order inside mandate");
   await bodyHas("AgentNotActive", 30000);
+  await role("anyone");
+  await freshMark();
+  await click("#unwindButton", "unwind()");
+  await page.waitForFunction(() => !document.querySelector("#unwindButton")?.disabled, null, { timeout: 30000 }).catch(() => {});
 });
 
-await scene(6, async () => {
-  await freshMark();
-  await click("#unwindButton", "unwind()");
-  await page.waitForFunction(() => !document.querySelector("#unwindButton")?.disabled, null, { timeout: 30000 }).catch(() => {});
-  await freshMark();
-  await click("#unwindButton", "unwind()");
-  await page.waitForFunction(() => !document.querySelector("#unwindButton")?.disabled, null, { timeout: 30000 }).catch(() => {});
+await scene(5, async () => {
+  await role("allocator (demo account)");
   await nav("allocate", "Allocate");
   await freshMark(2);
   await click("#withdrawButton", "Withdraw all shares");
-  await sleep(5000);
+  await sleep(4000);
 });
 
-// The feed links each line to monadscan. Open the poke's transaction, then the
-// vault launched in scene 1, in the same tab so the recording stays one file.
-await scene(7, async () => {
-  if (ONLY && !ONLY.includes(5)) return vaultPage("https://testnet.monadscan.com");
+// The age tile first, then the poke's transaction on monadscan in the same tab
+// so the recording stays one file.
+await scene(6, async () => {
+  await role("");
   await nav("risk", "Live Risk");
+  await point("#tileAge", "Mark age vs 10 s limit", 3500);
   const link = page.locator("#eventFeed .feed-item", { hasText: /poke|frozen/i }).locator("time a").first();
   const any = page.locator("#eventFeed time a").first();
   const target = (await link.count()) ? link : (await any.count()) ? any : null;
@@ -312,21 +318,7 @@ await scene(7, async () => {
   await setup();
   await hideBanner();
   await point("text=Success", "Status: Success", 3500).catch(() => sleep(3500));
-  await vaultPage(new URL(href).origin);
 });
-async function vaultPage(origin) {
-  const receipt = launched && (await retry(() => rpc.getTransactionReceipt(launched)));
-  const vault = receipt?.logs.find((l) => l.address.toLowerCase() === FACTORY && l.topics.length > 1);
-  const vaultAddr = vault ? "0x" + vault.topics[1].slice(26) : null;
-  log("launched vault", vaultAddr);
-  if (vaultAddr) {
-    await page.goto(origin + "/address/" + vaultAddr, { waitUntil: "domcontentloaded" });
-    await bodyHas("Contract", 30000);
-    await setup();
-    await hideBanner();
-    await sleep(4000);
-  }
-}
 async function hideBanner() {
   await page.evaluate(() => {
     for (const b of document.querySelectorAll("button, a")) {
@@ -339,11 +331,15 @@ async function hideBanner() {
   });
 }
 
-await scene(8, async () => {
+// The Perpl panel sits on Market. It reads the recorded runs; nothing is sent.
+await scene(7, async () => {
   await page.goto(BASE);
   await bodyHas(LABEL, 60000);
   await setup();
+  await nav("market", "Market");
+  await page.locator("#perplPanel").evaluate((el) => el.scrollIntoView({ block: "start", behavior: "smooth" }));
   await sleep(1500);
+  await point("#perplBody", "Perpl testnet: 20 filled, 9 refused", 4000).catch(() => sleep(4000));
 });
 
 const video = page.video();
