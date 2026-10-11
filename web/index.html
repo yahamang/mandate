@@ -47,6 +47,11 @@
             <p class="eyebrow">AUTONOMOUS CAPITAL · ONCHAIN RISK</p>
             <h1>Back the mandate.<br /><span>Not the track record.</span></h1>
             <p class="hero-copy">Agents execute; they never hold. Withdrawal stays with the allocator and every order clears an onchain RiskGuard first. Every number below is read from contract state on this chain.</p>
+            <div class="value-pills">
+              <div class="value-pill"><span class="value-pill-icon">⇥</span><div><b>Execute-only agent</b><small>No withdrawal path exists — not even for the operator</small></div></div>
+              <div class="value-pill"><span class="value-pill-icon">⛨</span><div><b>Limits enforced onchain</b><small>Breach it and anyone can freeze the vault for a bounty</small></div></div>
+              <div class="value-pill"><span class="value-pill-icon">↩</span><div><b>No exit penalty</b><small>1-day notice, cash-first — never a lockup fee</small></div></div>
+            </div>
             <button id="heroHint" class="hero-hint" type="button">No wallet needed: Connect → Demo allocator, then try Live Risk.</button>
           </div>
           <div class="hero-stat">
@@ -57,11 +62,22 @@
         </div>
 
         <div class="section-heading">
+          <div><p class="eyebrow">LOWEST DRAWDOWN LIMIT</p><h2>Featured mandate</h2></div>
+        </div>
+        <article class="panel spotlight-panel" id="spotlightPanel"></article>
+
+        <div class="section-heading">
           <div><p class="eyebrow">LIVE MARKET</p><h2>Mandate book</h2></div>
           <div class="legend"><span><i class="dot green"></i>Active</span><span><i class="dot red"></i>Over limit</span><span><i class="dot amber"></i>Frozen</span><span><i class="dot grey"></i>Closed</span></div>
         </div>
-        <div class="agent-table" id="leaderboard"></div>
-        <p class="disclosure">Sorted by the terms an allocator is asked to accept, not by return. Every cell is a contract read against the chain this page is served from.</p>
+        <div class="fund-filter" id="fundFilter">
+          <button class="chip active" data-filter="all" type="button">All mandates</button>
+          <button class="chip" data-filter="0" type="button">Active</button>
+          <button class="chip" data-filter="1" type="button">Frozen</button>
+          <button class="chip" data-filter="2" type="button">Closed</button>
+        </div>
+        <div class="fund-grid" id="leaderboard"></div>
+        <p class="disclosure">Sorted by the terms an allocator is asked to accept, not by return. Every number on every card is a contract read against the chain this page is served from.</p>
 
         <div class="panel perpl-panel" id="perplPanel">
           <div class="panel-title">
@@ -70,6 +86,74 @@
           </div>
           <p class="muted perpl-note">This vault is separate from the demo book above. It trades on Perpl's testnet exchange, driven by a rule-based agent script (not AI). Every few ticks the script sends an order past the vault's $200 position cap on purpose, and the guard refuses it on chain. Small testnet trades, no profit claim.</p>
           <div id="perplBody" class="perpl-body"><p class="muted">Reading Perpl testnet…</p></div>
+        </div>
+
+        <div class="section-heading">
+          <div><p class="eyebrow">TRANSPARENT SIMULATION</p><h2>What does a deposit actually buy?</h2></div>
+        </div>
+        <div class="panel calc-panel">
+          <div class="calc-controls">
+            <div class="calc-slider-box">
+              <div class="field-label"><span>Deposit amount</span><b class="mono" id="calcAmountText">$1,000</b></div>
+              <input id="calcSlider" type="range" min="10" max="50000" step="10" value="1000" aria-label="Deposit amount" />
+            </div>
+            <div class="calc-chip-row" id="calcVaultSelector"></div>
+          </div>
+          <div class="calc-output">
+            <div class="calc-output-row"><span>Estimated shares at today's NAV</span><b class="mono" id="calcShares">—</b></div>
+            <div class="calc-output-row"><span>NAV / share right now</span><b class="mono" id="calcNav">—</b></div>
+            <div class="calc-floor">
+              <div class="field-label"><span>If drawdown hits this mandate's limit</span><b id="calcLimitText">—</b></div>
+              <div class="calc-output-row"><span>Estimated value at that point</span><b class="mono" id="calcFloor">—</b></div>
+              <p class="fineprint calc-fineprint">This is what the contract's drawdown limit bounds, not a return forecast. Hitting it lets anyone call <code class="mono">poke()</code> to freeze the vault — it does not retroactively undo losses already marked, and it does not guarantee this exact price is what a forced exit clears at.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-heading">
+          <div><p class="eyebrow">ZERO-TRUST DESIGN</p><h2>Three things the code enforces, not a policy</h2></div>
+        </div>
+        <div class="pillar-grid">
+          <article class="panel pillar-card">
+            <span class="pillar-icon">∑</span>
+            <h3>A drawdown limit fixed in the contract</h3>
+            <p>Every mandate's maximum loss from its high-water NAV is set once at launch and locked. No admin key can raise it later.</p>
+          </article>
+          <article class="panel pillar-card">
+            <span class="pillar-icon">⚑</span>
+            <h3>Anyone can enforce it, not just us</h3>
+            <p><code class="mono">poke()</code>, <code class="mono">resume()</code> and <code class="mono">unwind()</code> are permissionless. Whoever proves a breach first takes the bounty — operators have no special path.</p>
+          </article>
+          <article class="panel pillar-card">
+            <span class="pillar-icon">◉</span>
+            <h3>Every number here is a contract read</h3>
+            <p>No backend database sits between this page and the chain. Every mark, trade and fee is a public event you can verify yourself.</p>
+          </article>
+        </div>
+
+        <div class="section-heading">
+          <div><p class="eyebrow">BEFORE YOU ALLOCATE</p><h2>Three questions worth asking</h2></div>
+        </div>
+        <div class="faq-list" id="faqList">
+          <div class="faq-item">
+            <button class="faq-trigger" type="button"><span>What happens if a mandate loses money?</span><span class="faq-icon">⌄</span></button>
+            <div class="faq-content" hidden>RiskGuard locks a maximum drawdown from the high-water NAV onchain. Cross it and anyone can call <code class="mono">poke()</code> to freeze new trades for a bounty — but a freeze stops further trading, it does not undo losses already marked. The limit bounds how much worse it can get; it is not a zero-loss guarantee.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-trigger" type="button"><span>Can I get my money out whenever I want?</span><span class="faq-icon">⌄</span></button>
+            <div class="faq-content" hidden>There is no lockup fee, but there is a 1-day redemption notice: call <code class="mono">requestRedeem()</code>, then claim after the notice runs out. What pays out immediately is capped by the vault's cash on hand — the rest stays as shares until the agent frees up more cash.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-trigger" type="button"><span>Can the agent ever withdraw my funds?</span><span class="faq-icon">⌄</span></button>
+            <div class="faq-content" hidden>No. The agent key can only submit trade orders through the venue adapter. There is no function on the vault that lets an agent address move funds out — only a share-holding wallet can withdraw, and only to itself.</div>
+          </div>
+        </div>
+
+        <div class="panel cta-panel">
+          <p class="eyebrow">GET STARTED</p>
+          <h2>Try it with the demo allocator — no wallet needed</h2>
+          <p class="muted">Connect → Demo allocator funds a test account the server signs for, so you can allocate, watch the RiskGuard, and request a redemption without installing anything.</p>
+          <button class="button button-primary button-large" data-route="allocate" type="button">Allocate USDC</button>
         </div>
       </section>
 

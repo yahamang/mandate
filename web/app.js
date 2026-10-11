@@ -39,7 +39,11 @@ const state = {
   network: null,
   oracle: null,
   gas: null,
-  adminToken: takeAdminToken()
+  adminToken: takeAdminToken(),
+  // Market screen UI state: which fund-card filter is active, and which
+  // vault the deposit calculator is quoting.
+  marketFilter: "all",
+  calcVault: 0
 };
 
 // The admin token arrives as #admin=<token>, which never reaches a server or its logs,
@@ -773,34 +777,68 @@ function describeLog(log) {
 }
 
 // --- rendering ----------------------------------------------------------
+// A tiny real line, same scaling idea as renderNavChart but sized for a
+// card-sized box. No fabricated rate — it only ever plots live NAV samples.
+function sparkPath(series, w, h) {
+  const samples = series ?? [];
+  if (samples.length === 0) return "";
+  const points = samples.length === 1 ? [samples[0], samples[0]] : samples;
+  const low = Math.min(...points);
+  const high = Math.max(...points);
+  const pad = (high - low || 1e-6) * 0.15;
+  const min = low - pad;
+  const max = high + pad;
+  const span = max - min || 1e-6;
+  const x = (i) => (i / (points.length - 1)) * w;
+  const y = (value) => h - ((value - min) / span) * h;
+  return `M${points.map((value, i) => `${x(i).toFixed(1)} ${y(value).toFixed(1)}`).join(" L")}`;
+}
+
 function buildLeaderboardSkeleton() {
   const ordered = [...state.deployment.vaults].sort(
     (a, b) => a.limits.maxDrawdownBps - b.limits.maxDrawdownBps
   );
   $("#leaderboard").innerHTML = ordered
-    .map((vault, position) => {
+    .map((vault) => {
       const index = state.deployment.vaults.indexOf(vault);
-      return `<div class="agent-row" data-index="${index}" role="button" tabindex="0" aria-label="Open ${vault.name}">
-        <span class="rank">${String(position + 1).padStart(2, "0")}</span>
-        <div class="agent-name">
-          <div class="agent-glyph${vault.key === "tight" ? " fly" : ""}${vault.launched ? " launched" : ""}">${vault.initials}</div>
-          <div><b>${vault.name}</b><small>${vault.thesis}</small></div>
+      return `<article class="fund-card" data-index="${index}" data-state="0" role="button" tabindex="0" aria-label="Open ${vault.name}">
+        <div class="fund-card-top">
+          <div class="fund-card-name"><b>${vault.name}</b><small>${vault.thesis}</small></div>
+          <div class="safety-ring" data-cell="ring" title="% of the drawdown limit still unused">
+            <svg viewBox="0 0 40 40"><circle class="ring-track" cx="20" cy="20" r="17"></circle><circle class="ring-value" data-cell="ringValue" cx="20" cy="20" r="17" stroke-dasharray="106.8" stroke-dashoffset="0"></circle></svg>
+            <span data-cell="ringText">—</span>
+          </div>
         </div>
-        <div class="agent-cell"><b data-cell="nav">—</b><small data-cell="aum">AUM —</small></div>
-        <div class="agent-cell hide-mobile"><b data-cell="dd">—</b><small>drawdown / limit</small></div>
-        <div class="agent-cell hide-mobile"><b data-cell="lev">—</b><small>leverage / limit</small></div>
-        <div class="agent-cell mobile-extra"><b data-cell="age">—</b><small>mark age / limit</small></div>
-        <span class="status" data-cell="state">—</span>
-      </div>`;
+        <div class="fund-card-nav"><span>NAV / SHARE</span><strong data-cell="nav">—</strong><small data-cell="since">—</small></div>
+        <svg class="fund-card-spark" viewBox="0 0 120 28" preserveAspectRatio="none"><path data-cell="spark" d=""></path></svg>
+        <div class="fund-card-stats">
+          <div><span>Drawdown limit</span><b>${pct(vault.limits.maxDrawdownBps)}</b></div>
+          <div><span>Leverage limit</span><b>${lev(vault.limits.maxLeverageX100)}</b></div>
+          <div><span>AUM</span><b data-cell="aum">—</b></div>
+          <div><span>Status</span><span class="status" data-cell="state">—</span></div>
+        </div>
+      </article>`;
     })
     .join("");
+  buildCalcVaultSelector(ordered);
   // Rows carry live cells that render() fills; a rebuilt skeleton has none yet.
   if (state.snapshot.length) renderMarket();
 }
 
-// One listener for the table, however many times its rows are rebuilt.
+function buildCalcVaultSelector(ordered) {
+  const container = $("#calcVaultSelector");
+  if (!container) return;
+  container.innerHTML = ordered
+    .map((vault) => {
+      const index = state.deployment.vaults.indexOf(vault);
+      return `<button type="button" class="chip${index === state.calcVault ? " active" : ""}" data-calc-vault="${index}">${vault.name}</button>`;
+    })
+    .join("");
+}
+
+// One listener for the grid, however many times its cards are rebuilt.
 function openAgentRow(event) {
-  const row = event.target.closest(".agent-row");
+  const row = event.target.closest(".fund-card");
   if (!row) return;
   state.selected = Number(row.dataset.index);
   render();
@@ -809,14 +847,51 @@ function openAgentRow(event) {
 $("#leaderboard").addEventListener("click", openAgentRow);
 $("#leaderboard").addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") return;
-  if (!event.target.classList.contains("agent-row")) return;
+  if (!event.target.classList.contains("fund-card")) return;
   event.preventDefault();
   openAgentRow(event);
+});
+
+$("#fundFilter")?.addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-filter]");
+  if (!chip) return;
+  state.marketFilter = chip.dataset.filter;
+  $$("#fundFilter .chip").forEach((c) => c.classList.toggle("active", c === chip));
+  renderMarket();
+});
+
+$("#spotlightPanel")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-spotlight-allocate]");
+  if (!button) return;
+  state.selected = Number(button.dataset.spotlightAllocate);
+  render();
+  route("allocate");
+});
+
+$("#calcVaultSelector")?.addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-calc-vault]");
+  if (!chip) return;
+  state.calcVault = Number(chip.dataset.calcVault);
+  $$("#calcVaultSelector .chip").forEach((c) => c.classList.toggle("active", c === chip));
+  updateCalc();
+});
+$("#calcSlider")?.addEventListener("input", updateCalc);
+
+$$(".faq-trigger").forEach((trigger) => {
+  trigger.setAttribute("aria-expanded", "false");
+  trigger.addEventListener("click", () => {
+    const content = trigger.closest(".faq-item").querySelector(".faq-content");
+    const expanded = trigger.getAttribute("aria-expanded") === "true";
+    trigger.setAttribute("aria-expanded", String(!expanded));
+    content.hidden = expanded;
+  });
 });
 
 function render() {
   if (!state.snapshot.length) return;
   renderMarket();
+  renderSpotlight();
+  updateCalc();
   renderAgent();
   renderAllocate();
   renderRisk();
@@ -835,22 +910,24 @@ function renderMarket() {
     ? `block #${state.blockNumber} · oracle every ${state.oracle?.cadenceSeconds ?? "–"}s`
     : `block #${state.blockNumber} · ${state.blockTimeSeconds}s cadence`;
 
-  for (const row of $$("#leaderboard .agent-row")) {
-    const vault = state.snapshot[Number(row.dataset.index)];
-    // A vault discovered this tick has a row before it has a snapshot.
+  for (const row of $$("#leaderboard .fund-card")) {
+    const index = Number(row.dataset.index);
+    const vault = state.snapshot[index];
+    // A vault discovered this tick has a card before it has a snapshot.
     if (!vault) continue;
     const cell = (name) => row.querySelector(`[data-cell="${name}"]`);
+    const navValue = Number(ethers.formatUnits(vault.nav, 18));
     cell("nav").textContent = nav4(vault.nav);
-    cell("aum").textContent = `AUM ${usd(vault.totalAssets)}`;
+    // NAV per share is seeded at exactly 1.0 par, so this is a real,
+    // unannualized return since the vault's first mark - not a rate forecast.
+    const sinceLaunchPct = (navValue - 1) * 100;
+    const since = cell("since");
+    since.textContent = `${sinceLaunchPct >= 0 ? "+" : ""}${sinceLaunchPct.toFixed(2)}% since launch`;
+    since.classList.toggle("positive", sinceLaunchPct >= 0);
+    cell("aum").textContent = usd(vault.totalAssets);
+
     const ddOver = vault.drawdownBps > vault.limits.maxDrawdownBps;
     const levOver = Number.isFinite(vault.levX100) && vault.levX100 > vault.limits.maxLeverageX100;
-    const ageOver = vault.markAge > vault.limits.maxMarkAgeSeconds;
-    cell("dd").textContent = `${vault.drawdownBps} / ${vault.limits.maxDrawdownBps} bps`;
-    cell("dd").classList.toggle("breached", ddOver);
-    cell("lev").textContent = `${lev(vault.levX100)} / ${lev(vault.limits.maxLeverageX100)}`;
-    cell("lev").classList.toggle("breached", levOver);
-    cell("age").textContent = `${vault.markAge}s / ${vault.limits.maxMarkAgeSeconds}s`;
-    cell("age").classList.toggle("stale", ageOver);
     // A vault sits Active onchain until someone pokes it, so a breach that
     // nobody has claimed yet is its own state - and the reason poke() pays.
     const breached = vault.agentState === 0 && (ddOver || levOver);
@@ -859,8 +936,75 @@ function renderMarket() {
     status.classList.toggle("frozen", vault.agentState === 1);
     status.classList.toggle("closed", vault.agentState === 2);
     status.classList.toggle("warn", breached);
-    row.classList.toggle("selected", Number(row.dataset.index) === state.selected);
+
+    // Safety ring: real % of the drawdown limit still unused, from the
+    // high-water mark - the honest number in place of a made-up score.
+    const ringValue = cell("ringValue");
+    const ringText = cell("ringText");
+    const buffer = vault.agentState === 2
+      ? 0
+      : Math.max(0, Math.min(1, 1 - vault.drawdownBps / Math.max(1, vault.limits.maxDrawdownBps)));
+    ringValue.setAttribute("stroke-dashoffset", (106.8 * (1 - buffer)).toFixed(1));
+    ringText.textContent = `${Math.round(buffer * 100)}`;
+    cell("ring").classList.toggle("warn", buffer < 0.5 && buffer >= 0.2 && vault.agentState === 0);
+    cell("ring").classList.toggle("breached", vault.agentState === 1 || buffer < 0.2);
+
+    const spark = cell("spark");
+    if (spark) spark.setAttribute("d", sparkPath(state.navSeries.get(vault.key), 120, 26));
+
+    row.dataset.state = String(vault.agentState);
+    row.classList.toggle("selected", index === state.selected);
+    row.style.display = state.marketFilter === "all" || state.marketFilter === String(vault.agentState) ? "" : "none";
   }
+}
+
+function renderSpotlight() {
+  const panel = $("#spotlightPanel");
+  if (!panel || !state.snapshot.length) return;
+  const vault = [...state.snapshot].sort((a, b) => a.limits.maxDrawdownBps - b.limits.maxDrawdownBps)[0];
+  const index = state.snapshot.indexOf(vault);
+  const navValue = Number(ethers.formatUnits(vault.nav, 18));
+  const sinceLaunchPct = (navValue - 1) * 100;
+  const series = state.navSeries.get(vault.key) ?? [];
+  panel.innerHTML = `<div class="spotlight-body">
+    <div>
+      <div class="spotlight-tags">
+        <span class="spotlight-tag">Lowest drawdown limit on this book</span>
+        <span class="spotlight-tag tertiary">${stateName(vault.agentState)}</span>
+      </div>
+      <h3>${vault.name} <span>${vault.thesis}</span></h3>
+      <p class="spotlight-thesis">${marketNames(allowedMask(vault))} against USDC on ${state.live ? "Monad testnet" : "a mock venue"}. Agent key ${shortAddress(vault.agent)} can trade it; only the wallet holding its shares can withdraw.</p>
+      <div class="spotlight-metrics">
+        <div><span>NAV / SHARE</span><strong>${nav4(vault.nav)}</strong></div>
+        <div><span>SINCE LAUNCH</span><strong class="${sinceLaunchPct >= 0 ? "positive" : ""}">${sinceLaunchPct >= 0 ? "+" : ""}${sinceLaunchPct.toFixed(2)}%</strong></div>
+        <div><span>DRAWDOWN LIMIT</span><strong>${pct(vault.limits.maxDrawdownBps)}</strong></div>
+        <div><span>AUM</span><strong>${usd(vault.totalAssets)}</strong></div>
+      </div>
+    </div>
+    <div class="spotlight-chart-box">
+      <div class="spotlight-chart-head"><span class="muted">NAV / share, live samples</span><b>${stateName(vault.agentState)}</b></div>
+      <svg viewBox="0 0 340 100" preserveAspectRatio="none"><path d="${sparkPath(series, 340, 90)}" fill="none" stroke="#4edea3" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <div class="spotlight-chart-range"><span>${series.length} sample${series.length === 1 ? "" : "s"}</span><span>updates every refresh</span></div>
+      <button class="button button-primary button-large" data-spotlight-allocate="${index}" type="button">Allocate to ${vault.name}</button>
+    </div>
+  </div>`;
+}
+
+// Honest deposit calculator: shares at today's NAV, and what the contract's
+// drawdown limit bounds - never a projected or annualized return.
+function updateCalc() {
+  const slider = $("#calcSlider");
+  if (!slider) return;
+  const amount = Number(slider.value);
+  $("#calcAmountText").textContent = `$${amount.toLocaleString()}`;
+  const vault = state.snapshot[state.calcVault] ?? state.snapshot[0];
+  if (!vault) return;
+  const navValue = Number(ethers.formatUnits(vault.nav, 18)) || 1;
+  $("#calcShares").textContent = `${(amount / navValue).toLocaleString(undefined, { maximumFractionDigits: 4 })} shares`;
+  $("#calcNav").textContent = `${nav4(vault.nav)} (${vault.name})`;
+  $("#calcLimitText").textContent = `${pct(vault.limits.maxDrawdownBps)} from high-water`;
+  const floor = amount * (1 - vault.limits.maxDrawdownBps / 10000);
+  $("#calcFloor").textContent = `$${floor.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
 function renderAgent() {
