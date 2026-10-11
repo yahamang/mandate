@@ -10,7 +10,9 @@ const GAP = 0.25;
 const READ = [["Mandate", "맨데이트"], ["USDC", "유에스디씨"], ["poke", "포크"], ["Perpl", "퍼플"], ["Monad", "모나드"], ["mock", "모의 구현"], ["Tight", "타이트"]];
 const say = (text, out) => {
   const spoken = lang === "ko" ? READ.reduce((t, [a, b]) => t.split(a).join(b), text) : text;
-  execFileSync("say", lang === "ko" ? ["-v", "Yuna", "-r", "200", "-o", out, spoken] : ["-v", "Samantha", "-r", "168", "-o", out, spoken]);
+  const mp3 = out.replace(/\.aiff$/, ".mp3");
+  execFileSync("edge-tts", ["--voice", lang === "ko" ? "ko-KR-SunHiNeural" : "en-US-AndrewMultilingualNeural", ...(lang === "ko" ? ["--rate=+12%"] : []), "--text", spoken, "--write-media", mp3]);
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-i", mp3, "-ar", "22050", "-ac", "1", "-c:a", "pcm_s16be", out]);
 };
 const len = (f) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString());
 

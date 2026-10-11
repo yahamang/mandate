@@ -1,128 +1,106 @@
 [
  [
   {
-   "text": "This is Mandate, running live on Monad testnet.",
+   "text": "If you hand money to someone else's trading agent,",
    "at": 0
   },
   {
-   "text": "It is a market where trading agents raise capital under terms a contract enforces.",
-   "at": 3.23
+   "text": "you have to trust whoever runs it: not to take the money,",
+   "at": 3.35
   },
   {
-   "text": "An allocator puts money into an agent's vault.",
-   "at": 8.25
+   "text": "and not to take more risk than they promised.",
+   "at": 7.48
   },
   {
-   "text": "The agent can trade that money and can never withdraw it.",
-   "at": 11.24
+   "text": "Mandate turns that trust into contract terms.",
+   "at": 10.28
   },
   {
-   "text": "Its terms are locked on chain before the first deposit,",
-   "at": 14.4
+   "text": "This is the live app on Monad testnet.",
+   "at": 14.25
   },
   {
-   "text": "and every order has to pass a risk guard that checks them.",
-   "at": 17.75
+   "text": "Each card is a vault that an agent trades.",
+   "at": 17.28
   },
   {
-   "text": "So the allocator stops asking \"can I trust this trader?\"",
-   "at": 21.06
+   "text": "Its limits, like maximum drawdown and leverage,",
+   "at": 20.2
   },
   {
-   "text": "and asks \"can I accept these terms?\"",
-   "at": 24.69
+   "text": "are locked in the vault contract.",
+   "at": 24.05
+  },
+  {
+   "text": "The ring shows how much of the drawdown limit is still unused,",
+   "at": 26.31
+  },
+  {
+   "text": "and the status shows whether the agent may trade.",
+   "at": 30.74
+  },
+  {
+   "text": "In this video I play three roles: the operator who opens a vault,",
+   "at": 34.08
+  },
+  {
+   "text": "the allocator who funds it, and the agent that trades it.",
+   "at": 39.35
   }
  ],
  [
   {
-   "text": "Any agent can list itself from its own wallet.",
+   "text": "Anyone can open a vault.",
    "at": 0
   },
   {
-   "text": "One transaction deploys a vault, sets its terms,",
-   "at": 2.94
+   "text": "Pick a preset, and one transaction deploys the vault,",
+   "at": 2.12
   },
   {
-   "text": "locks them and registers the agent.",
-   "at": 6.52
+   "text": "sets its terms and locks them before the first deposit.",
+   "at": 6.09
   },
   {
-   "text": "Nobody approves it.",
-   "at": 8.78
-  },
-  {
-   "text": "The terms cover size per order, per market and per block, leverage,",
-   "at": 10.26
-  },
-  {
-   "text": "drawdown, daily loss, how long a position may be held,",
-   "at": 14.75
-  },
-  {
-   "text": "which markets and which direction, and how old the mark may be.",
-   "at": 18.66
-  },
-  {
-   "text": "Fees are capped and paid only in vault shares.",
-   "at": 22.48
+   "text": "The operator cannot change them afterwards.",
+   "at": 9.89
   }
  ],
  [
   {
-   "text": "Every vault shows its term sheet: the locked value,",
+   "text": "Now I am an allocator.",
    "at": 0
   },
   {
-   "text": "where the vault stands now, and what happens when it is crossed.",
-   "at": 3.36
+   "text": "I put a thousand test USDC into Tight Mandate.",
+   "at": 2.12
   },
   {
-   "text": "An order past a trade term is simply refused.",
-   "at": 7.13
+   "text": "The money goes to the vault contract.",
+   "at": 6.43
   },
   {
-   "text": "Drawdown and holding time freeze the agent for good.",
-   "at": 10.23
-  },
-  {
-   "text": "Daily loss only pauses new risk until the next day.",
-   "at": 13.26
-  },
-  {
-   "text": "And if the price feed stalls, the agent is frozen,",
-   "at": 16.51
-  },
-  {
-   "text": "but anyone can resume it once a fresh mark is back inside the limits.",
-   "at": 19.86
+   "text": "The agent can trade it, but it can never withdraw it.",
+   "at": 8.98
   }
  ],
  [
   {
-   "text": "Now I switch to the demo allocator and deposit one thousand test USDC.",
+   "text": "Now I am the agent.",
    "at": 0
   },
   {
-   "text": "It goes into the vault contract, not to the agent.",
-   "at": 5.01
-  }
- ],
- [
-  {
-   "text": "Now I act as the agent.",
-   "at": 0
+   "text": "An order inside the terms passes the risk guard and executes.",
+   "at": 2.12
   },
   {
-   "text": "An order inside the terms passes the guard and executes,",
-   "at": 1.85
+   "text": "An order past the limit is refused before it reaches the venue,",
+   "at": 6.76
   },
   {
-   "text": "and each line links to its transaction.",
-   "at": 5.41
-  },
-  {
-   "text": "An order past the leverage limit is refused before it reaches the venue, with the contract's own error.",
-   "at": 7.99
+   "text": "and the feed shows the contract's own error.",
+   "at": 10.85
   }
  ],
  [
@@ -131,98 +109,74 @@
    "at": 0
   },
   {
-   "text": "and this vault is now past its three percent drawdown.",
-   "at": 2.07
+   "text": "and this vault is now past its three percent drawdown limit.",
+   "at": 2.55
   },
   {
-   "text": "Anyone can prove that.",
-   "at": 5.37
+   "text": "Anyone can act on that.",
+   "at": 6.84
   },
   {
-   "text": "Poke re-marks the vault,",
-   "at": 7.05
+   "text": "Poke freezes the agent and pays the caller a small bounty.",
+   "at": 8.96
   },
   {
-   "text": "freezes the agent and pays the caller a small bounty.",
-   "at": 8.74
+   "text": "The agent's next order is refused,",
+   "at": 12.76
   },
   {
-   "text": "The agent's next order is refused.",
-   "at": 12.19
+   "text": "and the position is closed in public steps.",
+   "at": 15.67
   }
  ],
  [
   {
-   "text": "A frozen position is closed in public steps, a fifth at a time.",
+   "text": "The allocator is never locked in.",
    "at": 0
   },
   {
-   "text": "The allocator can withdraw throughout,",
-   "at": 4.39
-  },
-  {
-   "text": "paid from the vault's cash at a fresh mark.",
-   "at": 6.72
-  },
-  {
-   "text": "In an active vault,",
-   "at": 9.35
-  },
-  {
-   "text": "a redemption request gives the agent a day to free the cash,",
-   "at": 10.8
-  },
-  {
-   "text": "and after that anyone can force it.",
-   "at": 14.44
-  },
-  {
-   "text": "Even if the price feed stops, a cash-only exit stays open.",
-   "at": 16.69
+   "text": "Withdrawals stay open through the freeze.",
+   "at": 2.75
   }
  ],
  [
   {
-   "text": "Every line in the feed is a Monad testnet transaction.",
+   "text": "This vault refuses any price older than ten seconds.",
    "at": 0
   },
   {
-   "text": "Here is the poke that froze the agent, confirmed on the explorer,",
-   "at": 3.31
+   "text": "A mandate can only demand a price as fresh as its chain's blocks allow,",
+   "at": 4.09
   },
   {
-   "text": "and here is the vault launched a minute ago.",
-   "at": 7.21
+   "text": "and that is why Mandate is built on Monad.",
+   "at": 9.14
   },
   {
-   "text": "Tight Mandate refuses any mark older than ten seconds,",
-   "at": 9.74
+   "text": "Every action here is a testnet transaction,",
+   "at": 12.49
   },
   {
-   "text": "a term a twelve-second chain could never meet.",
-   "at": 13.39
-  },
-  {
-   "text": "A mandate can only demand a price as fresh as its chain's blocks,",
-   "at": 16.12
-  },
-  {
-   "text": "which is why we build on Monad.",
-   "at": 20.22
+   "text": "like this poke on the explorer.",
+   "at": 15.83
   }
  ],
  [
   {
-   "text": "Today the venue and the USDC are mocks.",
+   "text": "In this demo the venue and the USDC are mocks.",
    "at": 0
   },
   {
-   "text": "An adapter for Perpl, a perpetuals exchange on Monad,",
-   "at": 2.87
+   "text": "The same guard also runs against Perpl's testnet exchange.",
+   "at": 3.87
   },
   {
-   "text": "is written and tested against a fork of Monad testnet.",
-   "at": 6.86
+   "text": "Over five runs,",
+   "at": 8.11
+  },
+  {
+   "text": "a rule-based script had twenty orders filled and nine over-limit orders refused on chain.",
+   "at": 10.23
   }
  ]
 ]

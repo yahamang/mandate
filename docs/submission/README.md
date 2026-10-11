@@ -11,11 +11,12 @@ Monad Metropolis 해커톤 Track 1 (Onchain Finance & Trading) 제출까지의 �
 
 ## 요약
 
-- 제출 폼 체크리스트 5개 중 4개가 끝났습니다. 남은 하나는 영상 2개의 링크입니다.
+- 영상 세 편(데모, 피치, Perpl 바운티)을 10-11에 다 만들었습니다. 남은 일은 업로드, 폼에 링크 세 개 입력, 최종 점검 뒤 "REVIEW ENTRY"입니다.
+- 제출 폼은 영상 링크 칸만 비어 있습니다. 나머지 칸은 10-11에 저장소 파일과 맞춰 다시 저장했고, 저장 뒤 다시 읽어 일치를 확인했습니다.
 - 공개 데모 <https://mandate-e4kb.onrender.com> 은 2026-10-10 16:24 UTC에 배포한 테스트넷 장부(노이즈 서약이 들어간 MandateRegistry, guard `0xa8CD7431…`)로 돌고 있습니다. 10-11 Render 재배포 뒤 새 Market 화면, 오라클 5초 간격, `/api/reporter/status`의 `noisePledges: true`를 확인했습니다.
 - 노이즈 서약은 공개 데모에서 실측했습니다(2026-10-11). epoch 1은 게시 직전 서약이라 `late-pledge`, epoch 2부터 `verified`(서약 블록 70015012, 데이터 창 시작 70015534). 검증은 `contracts/script/verify-noise.mjs`.
-- 데모 영상은 새 화면에 맞춰 다시 찍어야 합니다. 10-07 녹화본은 옛 화면(행 목록 Market)이라 지금 공개 데모와 다릅니다. 녹화 스크립트는 8장면 구성으로 고쳤고 로컬 체인에서 리허설했습니다(`demo-video/`). 공개 데모 녹화는 테스트넷 트랜잭션을 보내므로 팀이 승인하고 돌립니다. 피치 영상은 아직입니다.
-- 세 `.txt`는 10-11에 고쳤습니다(카드형 Market 문구, 노이즈 서약, 테스트 개수 삭제). 폼 세 칸에 다시 붙여 넣어야 합니다.
+- 공개 데모는 방문자가 볼트를 동결하면 스스로 새 장부를 배포합니다(`AUTO_RESET_MIN_FROZEN=1`). 그래서 지금 장부(2026-10-11 04:50 UTC 배포, 10-11 확인)의 주소는 README "Recorded run on Monad testnet" 표(10-10 16:24 UTC 장부)와 다릅니다. 지금 주소는 공개 데모의 `/api/deployment`에서 볼 수 있고, 표의 장부는 체인에 그대로 남아 있습니다.
+- 영상 파일은 저장소에 넣지 않습니다. 아래 "영상" 절에 길이와 폼 칸을 적었습니다.
 
 ## 이 폴더의 파일
 
@@ -25,13 +26,14 @@ Monad Metropolis 해커톤 Track 1 (Onchain Finance & Trading) 제출까지의 �
 | [`go-to-market.txt`](go-to-market.txt) | 폼 "Go-to-market and user acquisition strategy"에 넣을 영문 본문. 6,963자 (한도 8,000자) |
 | [`judge-access.txt`](judge-access.txt) | 폼 "Judge access instructions"에 넣을 영문 본문. 6,039자 (한도 8,000자) |
 | [`demo-video-script.md`](demo-video-script.md) | Technical demo video (3분 이하) 대본 초안 |
-| [`pitch-video-script.md`](pitch-video-script.md) | Pitch video (2분 이하) 대본 초안. 팀 소개 줄은 비어 있음 |
-| [`demo-video/`](demo-video/README.md) | 데모 영상 녹화 스크립트. 10-11 새 화면 기준 8장면 |
+| [`pitch-video-script.md`](pitch-video-script.md) | Pitch video (2분 이하) 대본 초안. 팀 소개 줄은 영상에서 채움 |
+| [`perpl-bounty-video-script.md`](perpl-bounty-video-script.md) | Perpl 바운티 영상(2분 이하) 대본 |
+| [`demo-video/`](demo-video/README.md) | 데모 영상 녹화·합성 스크립트. 10-11 최종본을 만든 판 |
 | [`club-deck/`](club-deck/README.md) | HYBLOCK 학회 발표 덱 (PDF와 원본). 제출물 아님 |
-| [`mandate-logo.png`](mandate-logo.png) | 폼에 올린 로고, 1024×1024 |
-| [`mandate-logo.source.html`](mandate-logo.source.html) | 로고 원본 (SVG). 데모 페이지의 브랜드 마크와 같은 그림 |
+| [`mandate-logo.png`](mandate-logo.png) | 폼에 올린 로고, 1024×1024. 10-11에 새 화면의 보라색 M 마크로 교체 |
+| [`mandate-logo.source.html`](mandate-logo.source.html) | 로고 원본 (HTML) |
 
-세 `.txt` 파일은 2026-10-11에 고쳤고, 폼에 저장된 값(10-06에 붙여 넣은 글)과 다릅니다. 폼의 글을 바꿀 때는 이 폴더의 파일을 먼저 고치고 그 내용을 폼에 붙여 넣습니다. 그래야 폼과 저장소가 어긋나지 않습니다.
+세 `.txt` 파일은 2026-10-11에 고쳤고(카드형 Market 문구, 노이즈 서약, 테스트 개수 삭제), 같은 날 폼에 다시 붙여 넣어 일치를 확인했습니다. 폼의 글을 바꿀 때는 이 폴더의 파일을 먼저 고치고 그 내용을 폼에 붙여 넣습니다. 그래야 폼과 저장소가 어긋나지 않습니다.
 
 글과 대본은 AI 도구(Claude Code)로 쓴 초안입니다. Go-to-market의 가정과 대본의 문장은 팀이 읽고 확정해야 합니다.
 
@@ -43,11 +45,11 @@ Monad Metropolis 해커톤 Track 1 (Onchain Finance & Trading) 제출까지의 �
 | --- | --- | --- |
 | 공개 GitHub 저장소: 전체 소스, 설치법 README, 오픈소스 라이선스, 외부 코드 출처, 빌드 기간의 커밋 이력 | 충족 | MIT `LICENSE`, README "Third-party code" |
 | README에 AI 코딩 도구 사용 고지 | 충족 | README "AI tool disclosure". 아래 "정해야 할 것" 5번 참고 |
-| 데모 영상: 3분 이하, 공개 링크(YouTube, Loom, Vimeo), 실제 동작과 Monad 상호작용 장면 | 재녹화 필요 | 10-07 녹화본은 옛 화면. 새 화면용 스크립트는 로컬 리허설 완료, 공개 데모 녹화와 업로드 남음 |
+| 데모 영상: 3분 이하, 공개 링크(YouTube, Loom, Vimeo), 실제 동작과 Monad 상호작용 장면 | 영상 완성, 업로드 남음 | 10-11 공개 데모 녹화본, 영어 2분 26초. 공개 링크로 올려 폼에 입력 |
 | Monad 메인넷 또는 테스트넷 배포, 컨트랙트 주소 또는 트랜잭션 해시 | 충족 | README "Recorded run on Monad testnet"에 컨트랙트 주소 11개와 트랜잭션 해시 |
 | Monad를 쓰는 이유 설명 | 초안 있음 | `description.txt`. 가격 기준 시각(mark age) 논리 |
 | 문서: 프로젝트 설명, 아키텍처, 기술 스택, 설치와 배포 방법 | 충족 | 루트 README |
-| 플랫폼 제출 | 폼 4/5 | 아래 표 |
+| 플랫폼 제출 | 영상 링크만 남음 | 아래 표 |
 
 ## 제출 폼
 
@@ -56,18 +58,31 @@ Monad Metropolis 해커톤 Track 1 (Onchain Finance & Trading) 제출까지의 �
 | 항목 | 필수 | 조건 | 상태 |
 | --- | --- | --- | --- |
 | Primary track | 필수 | 1개 선택 | 완료: Onchain Finance & Trading |
-| Project logo | 필수 | PNG, JPG, WEBP. 2 MB 이하, 500 px 이상 | 완료: `mandate-logo.png` |
+| Project logo | 필수 | PNG, JPG, WEBP. 2 MB 이하, 500 px 이상 | 완료: `mandate-logo.png` (10-11 교체) |
 | Project name | 필수 | 120자 | 완료: `Mandate` |
 | One-line description | 필수 | 200자 | 완료: README 영문 첫 줄 문구 (139자). "정해야 할 것" 6번 참고 |
 | Description | 필수 | 8,000자 | 완료: `description.txt` |
 | Go-to-market and user acquisition strategy | 필수 | 8,000자 | 완료: `go-to-market.txt`. 팀 확인 필요 |
 | GitHub repository | 필수 | 공개 저장소 | 완료: `https://github.com/jiwon000/mandate` |
 | Live product | 필수 | https 링크. Monad 메인넷 또는 테스트넷에서 동작 | 완료: `https://mandate-e4kb.onrender.com/` |
-| Technical demo video | 필수 | 3분 이하. 동작하는 제품. 슬라이드와 코드 설명 불가 | 없음 |
-| Pitch video | 필수 | 2분 이하. 팀 소개, 문제, 만드는 이유 | 없음 |
+| Technical demo video | 필수 | 3분 이하. 동작하는 제품. 슬라이드와 코드 설명 불가 | 영상 완성(2분 26초), 링크 입력 남음 |
+| Pitch video | 필수 | 2분 이하. 팀 소개, 문제, 만드는 이유 | 영상 완성(1분 42초), 링크 입력 남음 |
 | Judge access instructions | 선택 | 8,000자 | 완료: `judge-access.txt` |
-| Sponsor bounties | 선택 | 트랙 선택 뒤 추가 | 추가하지 않음. "정해야 할 것" 8번 참고 |
+| Sponsor bounties | 선택 | 트랙 선택 뒤 추가 | Perpl "Best use of Perpl's API" 추가. 시스템 링크 칸 완료(`docs/perpl-adapter.md#agent-runs`), 영상 완성(1분 37초), 영상 링크 입력 남음 |
 | Product advertisement, X profile | 선택 | 심사와 무관 | 비어 있음 |
+
+## 영상
+
+2026-10-11에 만든 최종본입니다. 모두 1280×720이고 자막이 들어 있습니다. 파일은 저장소에 넣지 않고 팀이 따로 보관합니다.
+
+| 영상 | 길이 | 폼 칸 | 만든 방법 |
+| --- | --- | --- | --- |
+| 데모 (영어) | 2분 26초 | Technical demo video | 공개 데모 녹화 + 내레이션 ([`demo-video/`](demo-video/README.md)) |
+| 피치 (영어) | 1분 42초 | Pitch video | 슬라이드 + 내레이션 |
+| Perpl 바운티 (영어) | 1분 37초 | Perpl 바운티의 영상 칸 | 10-10 에이전트 실행 화면과 `docs/perpl-adapter.md`의 Agent runs 표 + 내레이션 |
+| 데모, 피치 (한국어) | 2분 39초, 1분 55초 | 없음 | 같은 구성의 한국어판. 학회 공유용 |
+
+내레이션은 모두 합성 음성(`edge-tts`)입니다. `perpl-bounty-video-script.md`에 적힌 1분 24초는 10-10판 길이이고, 10-11에 끝 화면과 내레이션을 고쳐 1분 37초가 됐습니다.
 
 ## 남은 일
 
@@ -80,11 +95,12 @@ Monad Metropolis 해커톤 Track 1 (Onchain Finance & Trading) 제출까지의 �
 | ~~2-2~~ | ~~공개 데모를 새 컨트랙트로 전환 (Render 배포 → 관리자 `Reset demo` → 주소 표와 `10143.json` 갱신)~~ | @jiwon000, @yahamang | 완료 (2026-10-05 08:08 UTC 장부) |
 | ~~3-1~~ | ~~제출 폼 Description을 `description.txt`와 다시 맞추기. 한도에 맞게 9,565자에서 7,956자로 줄여 저장, One-line description도 함께 저장~~ | 팀 | 완료 (2026-10-05) |
 | ~~3-2~~ | ~~10-06에 고친 `description.txt`, `go-to-market.txt`, `judge-access.txt`를 폼 세 칸에 다시 붙여 넣고, 저장 뒤 다시 읽어 일치 확인~~ | 팀 | 완료 (2026-10-06, 세 칸 모두 파일과 일치) |
-| 3-3 | 10-11에 고친 세 `.txt`를 폼에 다시 붙여 넣고 일치 확인 | 팀 | 남음 |
-| 4 | 데모 영상을 공개 데모에서 다시 녹화(`demo-video/README.md`), 업로드, 폼에 링크 입력 | 팀 | 스크립트 준비됨. 녹화 승인과 녹화용 지갑 남음 |
-| 5 | 피치 영상 녹화와 업로드, 폼에 링크 입력. 대본의 팀 소개 줄 채우기 | 팀 | 보류. 구성은 팀이 함께 정함 |
+| ~~3-3~~ | ~~10-11에 고친 세 `.txt`를 폼에 다시 붙여 넣고 일치 확인. 로고 교체~~ | 팀 | 완료 (2026-10-11) |
+| 4 | 데모 영상 업로드, 폼에 링크 입력 | @jiwon000 | 영상 완성 (10-11 공개 데모 녹화). 업로드 남음 |
+| 5 | 피치 영상 업로드, 폼에 링크 입력 | @jiwon000 | 영상 완성 (10-11). 업로드 남음 |
+| 5-1 | Perpl 바운티 영상 업로드, 폼의 바운티 영상 칸에 링크 입력 | @jiwon000 | 영상 완성 (10-11). 업로드 남음 |
 | 6 | 아래 "정해야 할 것" 정리 | 팀 | 진행 중 |
-| 7 | 제출 전 최종 점검: 공개 데모에서 `judge-access.txt`의 1~9단계(선택 10~14단계)를 그대로 따라 하기, README의 주소 표를 그때의 장부와 대조, 폼 "REVIEW ENTRY" | 팀 | 4, 5번 뒤 |
+| 7 | 제출 전 최종 점검: 공개 데모에서 `judge-access.txt`의 1~9단계(선택 10~14단계)를 그대로 따라 하기, 올린 영상 링크가 로그인 없이 열리는지 확인, 폼 "REVIEW ENTRY" | 팀 | 4, 5, 5-1번 뒤 |
 
 ## 공개 데모 운영 메모
 
@@ -92,7 +108,7 @@ Monad Metropolis 해커톤 Track 1 (Onchain Finance & Trading) 제출까지의 �
 
 - 호스트는 Render 웹 서비스이고, 라이브 모드(chainId 10143)로 돕니다. 2026-10-06 재배포 뒤 서빙되는 `app.js`는 main과 같습니다.
 - `web/live-recover.mjs`가 부팅할 때 체인에서 가장 최근 완성 장부를 찾아 쓰므로, 커밋된 `10143.json`이나 재배포 가능성에 의존하지 않습니다.
-- 공개 데모에 Batch·Privacy·Launch 화면이 보입니다. 지금 장부는 2026-10-07 05:21 UTC에 배포한 장부(마켓 기능에 동결 3단계·환매 대기열까지 포함)이고, 그 주소가 README "Recorded run on Monad testnet"과 `web/deployments/10143.json`에 반영돼 있습니다. 공개 데모에서 Launch는 브라우저 지갑으로만 할 수 있습니다(가스는 방문자 지갑 부담). 그 전 장부들(10-07 04:30, 10-06 04:18, 10-05 08:08·09:47 UTC 등)은 체인에 남아 있습니다.
+- 공개 데모에 Batch·Privacy·Launch 화면이 보입니다. README "Recorded run on Monad testnet"과 `web/deployments/10143.json`에는 2026-10-10 16:24 UTC 장부가 적혀 있고, 공개 데모는 그 뒤 자동 재배포로 새 장부(10-11 04:50 UTC, 10-11 확인)를 씁니다. 공개 데모에서 Launch는 브라우저 지갑으로만 할 수 있습니다(가스는 방문자 지갑 부담). 그 전 장부들(10-07 04:30, 10-06 04:18, 10-05 08:08·09:47 UTC 등)은 체인에 남아 있습니다.
 - Render의 파일시스템은 재시작과 재배포 때 초기화되지만, 빌드는 그때마다 배포 계정의 트랜잭션을 거꾸로 훑어 가장 최근 완성 장부로 부팅하므로(읽기만 하고 MON은 들지 않음, 테스트넷에서 약 40초) 더 이상 재시작마다 재배포가 일어나지 않습니다.
 - 대기 중인 의향, claim 증명, 리포터 표본은 메모리에만 있습니다. 재시작하면 사라집니다.
 - 공개 데모의 페이지나 `/api`를 열면 오라클이 60초 동안 5초 간격으로 가격을 갱신하고, 그만큼 배포 계정의 테스트넷 MON을 씁니다. 상태 확인은 필요한 만큼만 합니다.
@@ -126,7 +142,7 @@ Monad Metropolis 해커톤 Track 1 (Onchain Finance & Trading) 제출까지의 �
 5. ~~AI 사용 공개 문구~~ — 해결됨 (2026-10-06): 트레일러 없는 병합 외 커밋 8개(2026-09-20~09-22, @jiwon000 7개, @yahamang 1개)도 대부분 Claude로 작성했다고 팀이 확인했습니다. README "AI tool disclosure" 절에 "The eight earlier commits without a trailer (2026-09-20 to 09-22) were also written with AI coding tools, mostly Claude."를 추가했습니다.
 6. ~~한 줄 설명의 "market signals" 문구~~ — 해결됨 (2026-10-05): "시장 신호"가 실제로 게시하는 것(공개된 볼트 성과 통계)보다 넓게 읽혀서, README 한국어·영문 첫 줄을 "published performance stats carry a verifiable, on-chain differential-privacy budget" (공개된 성과 통계는 온체인에서 검증 가능한 차등 프라이버시 예산 안에서 게시됩니다)로 바꿨습니다. 폼의 "One-line description"도 이 문구로 다시 붙여넣어야 합니다 (영문 172자, 한도 200자).
 7. ~~DP 리포터의 단일 Laplace 스케일 문제~~ — 결정됨 (2026-10-05): 코드는 그대로 둡니다. Sharpe와 최대 낙폭은 clip된 입력에서의 실제 민감도(sensitivity)가 아직 유도되지 않았는데, 지금 시간 압박 속에서 직접 새 수식을 유도하면 틀릴 위험이 검증 안 된 주장을 하나 더 만드는 것과 같습니다 — "평균에 대해서만 정확하다"고 솔직하게 범위를 좁히는 쪽이 더 안전합니다. 이미 `description.txt`에 정확히 그렇게 적혀 있었고, README "Published ε vs Privacy Simulator" 절과 `reporter/reporter.mjs`의 코드 주석에도 같은 설명을 추가해 세 곳이 일치하도록 맞췄습니다.
-8. Sponsor bounty를 추가할지. 팀이 정할 일이고, 아래는 저장소 기준 사실만 정리한 것입니다 (2026-10-06). 바운티 이름과 금액(Perpl "Best use of Perpl's API" $5,000, "Best Analytics / Risk Tool" $3,000, 마감 10-13)은 10-05 웹 검색 결과라, 세부 요건은 대시보드 원문으로 확인해야 합니다.
+8. ~~Sponsor bounty를 추가할지~~ 결정 (2026-10-11): Perpl "Best use of Perpl's API"에 냅니다. 폼의 시스템 링크 칸을 채웠고 영상(1분 37초)을 만들었습니다. 아래는 저장소 기준 사실 정리입니다 (2026-10-06). 바운티 이름과 금액(Perpl "Best use of Perpl's API" $5,000, "Best Analytics / Risk Tool" $3,000, 마감 10-13)은 10-05 웹 검색 결과라, 세부 요건은 대시보드 원문으로 확인해야 합니다.
    - "Best use of Perpl's API": `PerplAdapter`가 Perpl 테스트넷 거래소의 실제 컨트랙트와 포크에서 개설부터 출금까지 동작합니다 ([`docs/perpl-adapter.md`](../perpl-adapter.md), 10회 연속 통과). 2026-10-06에 어댑터를 Monad 테스트넷에 배포해 Perpl 테스트넷 거래소에서 왕복 1회, 이어서 에이전트 스크립트 5회 실행(10-06 3회, 10-10 2회)으로 체결 20건, 한도 초과 거부 9건을 기록했습니다(README). 공개 데모는 여전히 mock 거래소입니다.
    - "Best Analytics / Risk Tool": RiskGuard 조건 검사, 텀시트, 변동성 조항, DP 리포터가 주제에 맞을 수 있습니다. Perpl 데이터 연동이 필수인지는 확인하지 못했습니다.
    - 둘 다 추가해도 본 트랙 심사에는 영향이 없습니다 (규정상 바운티는 트랙 선택 뒤 추가하는 선택 항목).

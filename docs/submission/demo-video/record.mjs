@@ -222,8 +222,12 @@ await page.mouse.move(640, 360);
 // agent orders, freeze and unwind, withdraw, mark age and explorer, Perpl.
 await scene(0, async () => {
   await sleep(1200);
-  await point("#chainLabel", "Monad testnet · 10143", 2600);
-  await point(TIGHT, "Four seeded vaults, four mandates", 3000);
+  await point("#leaderboard", "Vaults, each traded by an agent", 7000);
+  await point("#chainLabel", "Monad testnet · 10143", 4000);
+  await point(TIGHT, "Tight Mandate", 3000);
+  await point(`${TIGHT} .fund-card-stats`, "Limits locked in the contract", 7000);
+  await point(`${TIGHT} [data-cell="ring"]`, "Drawdown limit left", 6000);
+  await point(`${TIGHT} [data-cell="state"]`, "May the agent trade?", 5000);
 });
 
 let launched = null;
