@@ -108,6 +108,7 @@ body.live .live-only{display:inline}
 .lf input,.lf select{background:#0e0f16;border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--text);padding:10px 12px;font:13px var(--mono);width:100%}
 .lf input:focus,.lf select:focus{outline:none;border-color:var(--blue)}
 .check{display:flex;align-items:center;gap:7px;background:#1a1b24;border:1px solid var(--line);border-radius:9999px;padding:8px 14px;font:12px var(--mono);cursor:pointer}
+.check input[type="checkbox"]{width:14px;height:14px;margin:0;accent-color:var(--blue);cursor:pointer}
 .launch-summary{position:sticky;top:90px;display:flex;flex-direction:column;gap:12px}
 .launch-summary .eyebrow{margin:0}
 .terms-preview{font:11px var(--mono);word-break:break-all;color:var(--text);background:#0e0f16;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px}
